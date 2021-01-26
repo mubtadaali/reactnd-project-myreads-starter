@@ -4,6 +4,7 @@ import React, {Component} from 'react';
 import * as BooksAPI from './BooksAPI';
 import Book from './Book';
 import './App.css';
+import {SHELVES} from "./constants";
 
 class Home extends Component {
     constructor(props) {
@@ -57,7 +58,7 @@ class Home extends Component {
     }
 
     render() {
-        const {currentlyReading, wantToRead, read} = this.getCategoryBooks();
+        const categoryMap = this.getCategoryBooks();
 
         return (
             <div className="list-books">
@@ -66,49 +67,34 @@ class Home extends Component {
                 </div>
                 <div className="list-books-content">
                     <div>
-                        <div className="bookshelf">
-                            <h2 className="bookshelf-title">Currently Reading</h2>
-                            <div className="bookshelf-books">
-                                <ol className="books-grid">
-                                    { currentlyReading.map(
-                                        (book) =>
-                                            <Book key={book.id} book={book}
-                                                  onShelfChange={(book, shelf)=>this.handleShelfChange(book, shelf)}/>)
-                                    }
-                                </ol>
-                            </div>
-                        </div>
-                        <div className="bookshelf">
-                            <h2 className="bookshelf-title">Want to Read</h2>
-                            <div className="bookshelf-books">
-                                <ol className="books-grid">
-                                    { wantToRead.map(
-                                        (book) =>
-                                            <Book key={book.id} book={book}
-                                                  onShelfChange={(book, shelf)=>this.handleShelfChange(book, shelf)}/>)
-                                    }
-                                </ol>
-                            </div>
-                        </div>
-                        <div className="bookshelf">
-                            <h2 className="bookshelf-title">Read</h2>
-                            <div className="bookshelf-books">
-                                <ol className="books-grid">
-                                    { read.map(
-                                        (book) =>
-                                            <Book key={book.id} book={book}
-                                                  onShelfChange={(book, shelf)=>this.handleShelfChange(book, shelf)}/>)
-                                    }
-                                </ol>
-                            </div>
-                        </div>
+                        {
+                            SHELVES.map(
+                                opt =>
+                                    <div className="bookshelf">
+                                        <h2 className="bookshelf-title">{opt.title}</h2>
+                                        <div className="bookshelf-books">
+                                            <ol className="books-grid">
+                                                { categoryMap[opt.id].map(
+                                                    (book) =>
+                                                        <Book key={book.id} book={book}
+                                                              onShelfChange={
+                                                                  (book, shelf)=>this.handleShelfChange(book, shelf)
+                                                              }/>)
+                                                }
+                                            </ol>
+                                        </div>
+                                    </div>
+                            )
+                        }
                     </div>
                 </div>
+
                 <div className="open-search">
                     <Link to={{ pathname: "/search", state: this.state }}>
                         Add a book
                     </Link>
                 </div>
+
             </div>
         )
     }
