@@ -1,17 +1,27 @@
-import React, {Component} from 'react';
 import { Link } from "react-router-dom";
+import React, {Component} from 'react';
 
 import * as BooksAPI from './BooksAPI';
-import './App.css';
 import Book from './Book';
+import './App.css';
 
 class Home extends Component {
     constructor(props) {
         super(props);
         this.state = {
-            currentlyReading: [],
-            wantToRead: [],
-            read: []
+            allBooks: [],
+            currentlyReadingIDs: [],
+            wantToReadIDs: [],
+            readIDs: [],
+        };
+    }
+
+    getCategoryBooks() {
+        const {allBooks, currentlyReadingIDs, wantToReadIDs, readIDs} = this.state;
+        return {
+            currentlyReading: allBooks.filter(book => currentlyReadingIDs.includes(book.id)),
+            wantToRead: allBooks.filter(book => wantToReadIDs.includes(book.id)),
+            read: allBooks.filter(book => readIDs.includes(book.id))
         };
     }
 
@@ -19,11 +29,11 @@ class Home extends Component {
         let context = this;
         BooksAPI.getAll().then(
             function(books){
-                console.log(books);
                 context.setState({
-                    currentlyReading: books.filter((book) => book.shelf === "currentlyReading"),
-                    wantToRead: books.filter((book) => book.shelf === "wantToRead"),
-                    read: books.filter((book) => book.shelf === "read")
+                    allBooks: books,
+                    currentlyReadingIDs: books.filter((b) => b.shelf === "currentlyReading").map(b => b.id),
+                    wantToReadIDs: books.filter((b) => b.shelf === "wantToRead").map(b => b.id),
+                    readIDs: books.filter((b) => b.shelf === "read").map(b => b.id)
                 });
             });
     }
@@ -32,7 +42,23 @@ class Home extends Component {
         this.getAllBooks();
     }
 
+    handleShelfChange(book, newShelf) {
+        let context = this;
+        const newBooks = this.state.allBooks.map((b) => {
+            return (b.id === book.id)? { ...b, shelf: newShelf }: b;
+        });
+
+        BooksAPI.update(book, newShelf).then( res => context.setState({
+            allBooks: newBooks,
+            currentlyReadingIDs: res.currentlyReading,
+            wantToReadIDs: res.wantToRead,
+            readIDs: res.read,
+        }) );
+    }
+
     render() {
+        const {currentlyReading, wantToRead, read} = this.getCategoryBooks();
+
         return (
             <div className="list-books">
                 <div className="list-books-title">
@@ -44,8 +70,10 @@ class Home extends Component {
                             <h2 className="bookshelf-title">Currently Reading</h2>
                             <div className="bookshelf-books">
                                 <ol className="books-grid">
-                                    { this.state.currentlyReading.map(
-                                        (book) => <Book key={book.id} book={book}/>)
+                                    { currentlyReading.map(
+                                        (book) =>
+                                            <Book key={book.id} book={book}
+                                                  onShelfChange={(book, shelf)=>this.handleShelfChange(book, shelf)}/>)
                                     }
                                 </ol>
                             </div>
@@ -54,8 +82,10 @@ class Home extends Component {
                             <h2 className="bookshelf-title">Want to Read</h2>
                             <div className="bookshelf-books">
                                 <ol className="books-grid">
-                                    { this.state.wantToRead.map(
-                                        (book) => <Book key={book.id} book={book}/>)
+                                    { wantToRead.map(
+                                        (book) =>
+                                            <Book key={book.id} book={book}
+                                                  onShelfChange={(book, shelf)=>this.handleShelfChange(book, shelf)}/>)
                                     }
                                 </ol>
                             </div>
@@ -64,8 +94,10 @@ class Home extends Component {
                             <h2 className="bookshelf-title">Read</h2>
                             <div className="bookshelf-books">
                                 <ol className="books-grid">
-                                    { this.state.read.map(
-                                        (book) => <Book key={book.id} book={book}/>)
+                                    { read.map(
+                                        (book) =>
+                                            <Book key={book.id} book={book}
+                                                  onShelfChange={(book, shelf)=>this.handleShelfChange(book, shelf)}/>)
                                     }
                                 </ol>
                             </div>
@@ -73,7 +105,9 @@ class Home extends Component {
                     </div>
                 </div>
                 <div className="open-search">
-                    <Link to="/search"> Add a book </Link>
+                    <Link to={{ pathname: "/search", state: this.state }}>
+                        Add a book
+                    </Link>
                 </div>
             </div>
         )

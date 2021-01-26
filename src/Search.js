@@ -1,11 +1,65 @@
 import React, { Component } from 'react';
 import { Link } from "react-router-dom";
+
+import * as BooksAPI from "./BooksAPI";
+import Book from "./Book";
 import './App.css';
-// import * as BooksAPI from './BooksAPI'
+
 
 class Search extends Component {
 
-  render() {
+    constructor(props) {
+        super(props);
+        this.state = {
+            query: '', books: []
+        };
+    }
+
+    setBookShelf(allBooks, categoryMap) {
+        let { currentlyReadingIDs, wantToReadIDs, readIDs } = categoryMap;
+        for (let i=0; i< allBooks.length; i++) {
+            let book = allBooks[i];
+            if (currentlyReadingIDs.includes(book.id)){
+                book.shelf = "currentlyReading";
+            }else if (wantToReadIDs.includes(book.id)){
+                book.shelf = "wantToRead";
+            }else if (readIDs.includes(book.id)){
+                book.shelf = "read";
+            }
+        }
+        return allBooks;
+    }
+
+    handleSearchInputChange(event) {
+        this.setState({query: event.target.value});
+        this.searchBooks(event.target.value);
+    }
+
+    searchBooks(query) {
+        const context = this;
+        BooksAPI.search(query).then(
+            function (updatedBooks) {
+                let books = updatedBooks.items || updatedBooks;
+                const allBooks = context.setBookShelf(books, context.props.location.state);
+                context.setState({ books: allBooks });
+            }
+        );
+
+    }
+
+    handleShelfChange(book, newShelf) {
+        const context = this;
+        BooksAPI.update(book, newShelf).then(
+            function (response) {
+                let { currentlyReading, wantToRead, read } = response;
+                const categoryMap = { currentlyReadingIDs: currentlyReading, wantToReadIDs: wantToRead, readIDs: read};
+                const allBooks = context.setBookShelf(context.state.books, categoryMap);
+                context.setState({books: allBooks});
+            }
+        );
+    }
+
+    render() {
       return (
           <div className="search-books">
               <div className="search-books-bar">
@@ -13,19 +67,17 @@ class Search extends Component {
                       Close
                   </Link>
                   <div className="search-books-input-wrapper">
-                      {/*
-                      NOTES: The search from BooksAPI is limited to a particular set of search terms.
-                      You can find these search terms here:
-                      https://github.com/udacity/reactnd-project-myreads-starter/blob/master/SEARCH_TERMS.md
-
-                      However, remember that the BooksAPI.search method DOES search by title or author. So,
-                      don't worry if you don't find a specific author or title. Every search is limited by search terms.
-                      */}
-                      <input type="text" placeholder="Search by title or author"/>
+                      <input type="text" placeholder="Search by title or author"
+                             onChange={event => this.handleSearchInputChange(event)} />
                   </div>
               </div>
               <div className="search-books-results">
-                  <ol className="books-grid"></ol>
+                  <ol className="books-grid">
+                      { this.state.books.map(
+                          (book) => <Book key={book.id} book={book}
+                                          onShelfChange={(book, shelf) => this.handleShelfChange(book, shelf)}/>)
+                      }
+                  </ol>
               </div>
           </div>
       )
