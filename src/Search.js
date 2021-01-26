@@ -37,14 +37,20 @@ class Search extends Component {
 
     searchBooks(query) {
         const context = this;
-        BooksAPI.search(query).then(
-            function (updatedBooks) {
-                let books = updatedBooks.items || updatedBooks;
-                const allBooks = context.setBookShelf(books, context.props.location.state);
-                context.setState({ books: allBooks });
-            }
-        );
-
+        if (query === "") {
+            this.setState({ books: [] });
+        } else {
+            BooksAPI.search(query).then(
+                function (updatedBooks) {
+                    let books = updatedBooks.items || updatedBooks;
+                    const categoryMap = { currentlyReadingIDs: [], wantToReadIDs: [], readIDs: [] };
+                    const allBooks = context.setBookShelf(
+                        books, context.props.location.state || categoryMap
+                    );
+                    context.setState({ books: allBooks });
+                }
+            );
+        }
     }
 
     handleShelfChange(book, newShelf) {
