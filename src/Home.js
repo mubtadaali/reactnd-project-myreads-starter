@@ -70,7 +70,7 @@ class Home extends Component {
                         {
                             SHELVES.map(
                                 opt =>
-                                    <div className="bookshelf">
+                                    <div className="bookshelf" key={opt.id}>
                                         <h2 className="bookshelf-title">{opt.title}</h2>
                                         <div className="bookshelf-books">
                                             <ol className="books-grid">
